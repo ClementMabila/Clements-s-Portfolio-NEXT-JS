@@ -134,6 +134,60 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-light);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 11px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .status-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-message.success {
+            background: rgba(46, 221, 162, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(46, 221, 162, 0.2);
+        }
+
+        .status-message.error {
+            background: rgba(255, 89, 60, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(255, 89, 60, 0.2);
+        }
+
         .nav-links {
             display: flex;
             list-style: none;
@@ -1414,21 +1468,29 @@
                     </a>
                 </div>
             </div>
-            <form class="contact-form fade-in" id="contactForm">
+            <form id="accessRequestForm">
                 <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" required>
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter your username">
                 </div>
+                
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
                 </div>
-                <button type="submit" class="btn btn-primary">
+                
+                <button type="submit" id="submitBtn" class="btn btn-primary">
                     <img class="wave-icon" src="https://img.icons8.com/?size=100&id=39006&format=png&color=FFFFFF" alt="Wave Icon" style="width: 20px; height: 20px; vertical-align: middle;">
                     Wave at Me!
                 </button>
-                <p style="font-size: 09px; margin-top: 10px; color: var(--hoverMeSpan);">I'll get back to you as soon as possible!</p>
+                <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <span style="font-size: 10px; color: #2edda2;">Sending request...</span>
+            </div>
+            
+            <div class="status-message" id="statusMessage"></div>
             </form>
+            
         </div>
     </section>
 
@@ -1436,6 +1498,122 @@
     <button class="back-to-top" id="backToTop" aria-label="Back to top">
         <i class="fas fa-arrow-up"></i>
     </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script>
+        // Configuration - Replace with your email service details
+        const EMAIL_CONFIG = {
+            serviceID: 'service_96i95to', // Replace with your EmailJS service ID
+            templateID: 'template_q5a75oh', // Replace with your EmailJS template ID
+            publicKey: 'N3Liyps4OLYv56Yq0' // Replace with your EmailJS public key
+        };
+
+        // Initialize EmailJS when page loads
+        (function() {
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(EMAIL_CONFIG.publicKey);
+            }
+        })();
+        
+        function showAccessForm() {
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('accessForm').classList.remove('hidden');
+        }
+
+        function showLandingPage() {
+            document.getElementById('accessForm').classList.add('hidden');
+            document.getElementById('landingPage').classList.remove('hidden');
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('accessRequestForm').reset();
+            document.getElementById('statusMessage').classList.remove('show', 'success', 'error');
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        function showMessage(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
+        }
+
+        // Handle form submission
+        document.getElementById('accessRequestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            
+            // Get form data
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            
+            // Basic validation
+            if (!username.trim() || !email.trim()) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            
+            try {
+                // Check if EmailJS is loaded and configured
+                if (typeof emailjs !== 'undefined' && 
+                    EMAIL_CONFIG.serviceID !== 'your_service_id' && 
+                    EMAIL_CONFIG.templateID !== 'your_template_id' && 
+                    EMAIL_CONFIG.publicKey !== 'your_public_key') {
+                    
+                    const templateParams = {
+                        to_name: 'Admin', // You can customize this
+                        from_name: username,
+                        from_email: email,
+                        message: `New access request from ${username} (${email})`,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    
+                    await emailjs.send(
+                        EMAIL_CONFIG.serviceID,
+                        EMAIL_CONFIG.templateID,
+                        templateParams
+                    );
+                    
+                    showMessage('Access request sent successfully! We\'ll get back to you soon.', 'success');
+                    document.getElementById('accessRequestForm').reset();
+                } else {
+                    // EmailJS not configured - show demo message
+                    console.log('Demo mode - Request would be sent:', { username, email });
+                    
+                    // Simulate API delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    showMessage('Demo mode: EmailJS not configured yet. Please set up your email service.', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending request:', error);
+                showMessage('Failed to send request. Please check your EmailJS configuration.', 'error');
+            } finally {
+                // Hide loading state
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Add some interactive animations
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'translateY(-2px)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
 
     <script>
         // Theme Toggle Functionality
@@ -1547,6 +1725,7 @@
                 }
             });
         });
+        
 
         // Initialize EmailJS when page loads
         (function() {
@@ -1587,9 +1766,9 @@
     try {
         // Check if EmailJS is configured
         if (typeof emailjs !== 'undefined' && 
-            EMAIL_CONFIG.serviceID !== 'your_service_id' && 
-            EMAIL_CONFIG.templateID !== 'your_template_id' && 
-            EMAIL_CONFIG.publicKey !== 'your_public_key') {
+                EMAIL_CONFIG.serviceID !== 'your_service_id' && 
+                EMAIL_CONFIG.templateID !== 'your_template_id' && 
+                EMAIL_CONFIG.publicKey !== 'your_public_key') {
             
             // Prepare template parameters
             const templateParams = {
@@ -1876,12 +2055,6 @@ function showNotification(message, type) {
         `;
         document.head.appendChild(styles);
 
-        const EMAIL_CONFIG = {
-            serviceID: 'service_96i95to', // Replace with your EmailJS service ID
-            templateID: 'template_q5a75oh', // Replace with your EmailJS template ID
-            publicKey: 'N3Liyps4OLYv56Yq0' // Replace with your EmailJS public key
-        };
-
         // Initialize EmailJS when page loads
         (function() {
             if (typeof emailjs !== 'undefined') {
@@ -1937,9 +2110,9 @@ function showNotification(message, type) {
             try {
                 // Check if EmailJS is loaded and configured
                 if (typeof emailjs !== 'undefined' && 
-                    EMAIL_CONFIG.serviceID !== 'service_96i95to' && 
-                    EMAIL_CONFIG.templateID !== 'template_q5a75oh' && 
-                    EMAIL_CONFIG.publicKey !== 'N3Liyps4OLYv56Yq0') {
+                    EMAIL_CONFIG.serviceID !== 'your_service_id' && 
+                    EMAIL_CONFIG.templateID !== 'your_template_id' && 
+                    EMAIL_CONFIG.publicKey !== 'your_public_key') {
                     
                     const templateParams = {
                         to_name: 'Admin', // You can customize this
