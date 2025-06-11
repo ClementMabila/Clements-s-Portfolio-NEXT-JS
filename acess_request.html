@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Access</title>
+    <style>
+        :root {
+            --primary: #2edda2;
+            --secondary: #30d5c8;
+            --accent: #ff593c;
+            --gradient-addition: #edb1f1;
+            --gradient-addition-2: #ff6f3c;
+            --gray-light: #4444;
+            --gray-dark: #b8b0b044;
+            --bg-light: #ffffff;
+            --bg-dark: black;
+            --bg-lightdark: #3C4142;
+            --text-light: #3C4142;
+            --text-dark: #f8fafc;
+            --card-light: #ffffff;
+            --exp-light:#ffffff;
+            --exp-dark: #3C4142;
+            --card-dark: #42433D;
+            --border-light: #e2e8f0;
+            --border-dark: #334155;
+            --gradient-1: linear-gradient(135deg, var(--primary), var(--gradient-addition), var(--gradient-addition-2));
+            --gradient-2: linear-gradient(135deg, var(--secondary), var(--accent));
+            --gradient-3: linear-gradient(135deg, var(--primary), var(--accent));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:linear-gradient(115deg, #000000, #2b2019);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+        }
+
+        .access-card {
+            background: var(--card-light);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .access-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3C4142;
+            border-radius: 34px 34px 0 0;
+        }
+
+        .access-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            color: #3C4142;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #4444;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            font-size: 11px;
+            background: var(--bg-light);
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(46, 221, 162, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-group input:valid {
+            border-color: var(--primary);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px 24px;
+            background: #3C4142;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(46, 221, 162, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-light);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-message {
+            margin-top: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 11px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .status-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-message.success {
+            background: rgba(46, 221, 162, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(46, 221, 162, 0.2);
+        }
+
+        .status-message.error {
+            background: rgba(255, 89, 60, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(255, 89, 60, 0.2);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 11px;
+            margin-top: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+            transform: translateX(-4px);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .access-card {
+                padding: 24px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+
+        /* Landing page styles */
+        .landing-page {
+            text-align: center;
+            color: white;
+        }
+
+        .landing-page h1 {
+            font-size: 48px;
+            margin-bottom: 16px;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .landing-page p {
+            font-size: 20px;
+            margin-bottom: 32px;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.15);
+            color: #2edda2;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landingPage" class="container landing-page">
+        <h1 style="font-size: 15px;">Please Wait you are not lost !!</h1>
+        <p style="font-size: 11px;"><span style="color: #2edda2;">Request access</span> to be able to review and clone our repository.
+            This repository is private and only available to authorized users.</p>
+        <button class="cta-button" onclick="showAccessForm()">Request Access</button>
+    </div>
+
+    <!-- Access Request Form -->
+    <div id="accessForm" class="container hidden">
+        <div class="access-card">
+            <div class="header">
+                <h1>Request Access</h1>
+                <p>Enter your details to request access to our platform. We'll review your request and get back to you soon.</p>
+            </div>
+            
+            <form id="accessRequestForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter your username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                </div>
+                
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Request Access
+                </button>
+            </form>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <span>Sending request...</span>
+            </div>
+            
+            <div class="status-message" id="statusMessage"></div>
+            
+            <a href="#" class="back-link" onclick="showLandingPage()">
+                ← Back to home
+            </a>
+        </div>
+    </div>
+
+     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script>
+        // Configuration - Replace with your email service details
+        const EMAIL_CONFIG = {
+            serviceID: 'service_96i95to', // Replace with your EmailJS service ID
+            templateID: 'template_q5a75oh', // Replace with your EmailJS template ID
+            publicKey: 'N3Liyps4OLYv56Yq0' // Replace with your EmailJS public key
+        };
+
+        // Initialize EmailJS when page loads
+        (function() {
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(EMAIL_CONFIG.publicKey);
+            }
+        })();
+        
+        function showAccessForm() {
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('accessForm').classList.remove('hidden');
+        }
+
+        function showLandingPage() {
+            document.getElementById('accessForm').classList.add('hidden');
+            document.getElementById('landingPage').classList.remove('hidden');
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('accessRequestForm').reset();
+            document.getElementById('statusMessage').classList.remove('show', 'success', 'error');
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        function showMessage(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
+        }
+
+        // Handle form submission
+        document.getElementById('accessRequestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            
+            // Get form data
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            
+            // Basic validation
+            if (!username.trim() || !email.trim()) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            
+            try {
+                // Check if EmailJS is loaded and configured
+                if (typeof emailjs !== 'undefined' && 
+                    EMAIL_CONFIG.serviceID !== 'service_96i95to' && 
+                    EMAIL_CONFIG.templateID !== 'template_q5a75oh' && 
+                    EMAIL_CONFIG.publicKey !== 'N3Liyps4OLYv56Yq0') {
+                    
+                    const templateParams = {
+                        to_name: 'Admin', // You can customize this
+                        from_name: username,
+                        from_email: email,
+                        message: `New access request from ${username} (${email})`,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    
+                    await emailjs.send(
+                        EMAIL_CONFIG.serviceID,
+                        EMAIL_CONFIG.templateID,
+                        templateParams
+                    );
+                    
+                    showMessage('Access request sent successfully! We\'ll get back to you soon.', 'success');
+                    document.getElementById('accessRequestForm').reset();
+                } else {
+                    // EmailJS not configured - show demo message
+                    console.log('Demo mode - Request would be sent:', { username, email });
+                    
+                    // Simulate API delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    showMessage('Demo mode: EmailJS not configured yet. Please set up your email service.', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending request:', error);
+                showMessage('Failed to send request. Please check your EmailJS configuration.', 'error');
+            } finally {
+                // Hide loading state
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Add some interactive animations
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'translateY(-2px)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

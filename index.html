@@ -333,20 +333,20 @@
         }
 
         .projects-popup {
-    position: absolute;
-    top: -60px; /* raise above the profile image */
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: all 0.5s ease;
-    z-index: 10;
-    width: max-content;
-}
+            position: absolute;
+            top: -60px; /* raise above the profile image */
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: all 0.5s ease;
+            z-index: 10;
+            width: max-content;
+        }
 
 
         .profile-image:hover .projects-popup {
@@ -616,7 +616,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            height: 170px;
+            height: 200px;
         }
 
         .skill-category:hover {
@@ -1226,10 +1226,10 @@
                         <span class="tech-tag">PostgreSQL & ZOD Schemas</span>
                     </div>
                     <div class="project-links">
-                        <a href="https://github.com/ClementMabila/REFINE-GO" class="project-link">
+                        <a href="./acess_request.html" class="project-link">
                             <i class="fab fa-github"></i> Code
                         </a>
-                        <a href="https://refine-go.vercel.app/" class="project-link">
+                        <a href="./acess_request.html" class="project-link">
                             <i class="fas fa-external-link-alt"></i> Live Demo
                         </a>
                     </div>
@@ -1252,10 +1252,10 @@
                         <span class="tech-tag">Tailwind CSS & DaisyUI</span>
                     </div>
                     <div class="project-links">
-                        <a href="https://github.com/ClementMabila/Stockify-Full-Version" class="project-link">
+                        <a href="./acess_request.html" class="project-link">
                             <i class="fab fa-github"></i> Code
                         </a>
-                        <a href="https://github.com/ClementMabila/Stockify-Full-Version" class="project-link">
+                        <a href="./acess_request.html" class="project-link">
                             <i class="fas fa-external-link-alt"></i> Live Demo
                         </a>
                     </div>
@@ -1278,10 +1278,10 @@
                         <span class="tech-tag">DisyUI</span>
                     </div>
                     <div class="project-links">
-                        <a href="https://github.com/ClementMabila/Cranium-MoneyBrain" class="project-link">
+                        <a href="./acess_request.html" class="project-link">
                             <i class="fab fa-github"></i> Code
                         </a>
-                        <a href="https://github.com/ClementMabila/Cranium-MoneyBrain" class="project-link">
+                        <a href="./acess_request.html" class="project-link">
                             <i class="fas fa-external-link-alt"></i> Live Demo
                         </a>
                     </div>
@@ -1548,20 +1548,26 @@
             });
         });
 
+        // Initialize EmailJS when page loads
+        (function() {
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(EMAIL_CONFIG.publicKey);
+            }
+        })();
+
         // Contact Form Handling
         const contactForm = document.getElementById('contactForm');
-        
-        contactForm.addEventListener('submit', (e) => {
+
+        contactForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             // Get form data
             const formData = new FormData(contactForm);
             const name = formData.get('name');
             const email = formData.get('email');
-            const message = formData.get('message');
             
             // Simple validation
-            if (!name.trim() || !email.trim() || !message.trim()) {
+            if (!name.trim() || !email.trim()) {
                 showNotification('Please fill in all fields', 'error');
                 return;
             }
@@ -1571,69 +1577,114 @@
                 return;
             }
             
-            // Simulate form submission
+            // Get submit button and show loading state
             const submitButton = contactForm.querySelector('button[type="submit"]');
-            const originalText = submitButton.innerHTML;
+            const originalHTML = submitButton.innerHTML;
             
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
             submitButton.disabled = true;
             
-            setTimeout(() => {
-                submitButton.innerHTML = originalText;
-                submitButton.disabled = false;
-                contactForm.reset();
-                showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
-            }, 2000);
-        });
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
+    try {
+        // Check if EmailJS is configured
+        if (typeof emailjs !== 'undefined' && 
+            EMAIL_CONFIG.serviceID !== 'your_service_id' && 
+            EMAIL_CONFIG.templateID !== 'your_template_id' && 
+            EMAIL_CONFIG.publicKey !== 'your_public_key') {
+            
+            // Prepare template parameters
+            const templateParams = {
+                to_name: 'Your Name', // Replace with your name
+                from_name: name,
+                from_email: email,
+                subject: `New contact from ${name}`,
+                message: `You received a new contact request from:\n\nName: ${name}\nEmail: ${email}\n\nSent at: ${new Date().toLocaleString()}`,
+                reply_to: email
+            };
+            
+            // Send email using EmailJS
+            await emailjs.send(
+                EMAIL_CONFIG.serviceID,
+                EMAIL_CONFIG.templateID,
+                templateParams
+            );
+            
+            // Success
+            contactForm.reset();
+            showNotification('Message sent successfully! I\'ll get back to you soon.', 'success');
+            
+        } else {
+            // EmailJS not configured - demo mode
+            console.log('Demo mode - Contact form data:', { name, email });
+            
+            // Simulate sending delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            contactForm.reset();
+            showNotification('Demo mode: EmailJS not configured. Please set up your email service.', 'error');
         }
+        
+    } catch (error) {
+        console.error('Error sending email:', error);
+        showNotification('Failed to send message. Please try again or contact me directly.', 'error');
+    } finally {
+        // Reset button state
+        submitButton.innerHTML = originalHTML;
+        submitButton.disabled = false;
+    }
+});
 
-        function showNotification(message, type) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-                <span>${message}</span>
-            `;
-            
-            // Add notification styles
-            notification.style.cssText = `
-                position: fixed;
-                top: 100px;
-                right: 20px;
-                background: ${type === 'success' ? 'var(--primary)' : 'var(--accent)'};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 10px;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                z-index: 1002;
-                transform: translateX(100%);
-                transition: transform 0.3s ease;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Animate in
-            setTimeout(() => {
-                notification.style.transform = 'translateX(0)';
-            }, 100);
-            
-            // Remove notification after 5 seconds
-            setTimeout(() => {
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 5000);
-        }
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
 
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add notification styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: ${type === 'success' ? 'var(--primary)' : 'var(--accent)'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        z-index: 1002;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-width: 350px;
+        font-size: 14px;
+        line-height: 1.4;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove notification after 5 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 5000);
+}
         // Typing Animation for Hero Text
         function typeWriter(element, text, speed = 100) {
             let i = 0;
@@ -1824,6 +1875,117 @@
             }
         `;
         document.head.appendChild(styles);
+
+        const EMAIL_CONFIG = {
+            serviceID: 'service_96i95to', // Replace with your EmailJS service ID
+            templateID: 'template_q5a75oh', // Replace with your EmailJS template ID
+            publicKey: 'N3Liyps4OLYv56Yq0' // Replace with your EmailJS public key
+        };
+
+        // Initialize EmailJS when page loads
+        (function() {
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(EMAIL_CONFIG.publicKey);
+            }
+        })();
+        
+        function showAccessForm() {
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('accessForm').classList.remove('hidden');
+        }
+
+        function showLandingPage() {
+            document.getElementById('accessForm').classList.add('hidden');
+            document.getElementById('landingPage').classList.remove('hidden');
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('accessRequestForm').reset();
+            document.getElementById('statusMessage').classList.remove('show', 'success', 'error');
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        function showMessage(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message show ${type}`;
+        }
+
+        // Handle form submission
+        document.getElementById('accessRequestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            
+            // Get form data
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            
+            // Basic validation
+            if (!username.trim() || !email.trim()) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            
+            try {
+                // Check if EmailJS is loaded and configured
+                if (typeof emailjs !== 'undefined' && 
+                    EMAIL_CONFIG.serviceID !== 'service_96i95to' && 
+                    EMAIL_CONFIG.templateID !== 'template_q5a75oh' && 
+                    EMAIL_CONFIG.publicKey !== 'N3Liyps4OLYv56Yq0') {
+                    
+                    const templateParams = {
+                        to_name: 'Admin', // You can customize this
+                        from_name: username,
+                        from_email: email,
+                        message: `New access request from ${username} (${email})`,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    
+                    await emailjs.send(
+                        EMAIL_CONFIG.serviceID,
+                        EMAIL_CONFIG.templateID,
+                        templateParams
+                    );
+                    
+                    showMessage('Access request sent successfully! We\'ll get back to you soon.', 'success');
+                    document.getElementById('accessRequestForm').reset();
+                } else {
+                    // EmailJS not configured - show demo message
+                    console.log('Demo mode - Request would be sent:', { username, email });
+                    
+                    // Simulate API delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    showMessage('Demo mode: EmailJS not configured yet. Please set up your email service.', 'error');
+                }
+            } catch (error) {
+                console.error('Error sending request:', error);
+                showMessage('Failed to send request. Please check your EmailJS configuration.', 'error');
+            } finally {
+                // Hide loading state
+                loading.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Add some interactive animations
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'translateY(-2px)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
     </script>
 </body>
 </html>
